@@ -182,8 +182,9 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
             final int numBytesRead;
             synchronized (mReadBufferLock) {
                 int readAmt = Math.min(dest.length, mReadBuffer.length);
-                numBytesRead = mConnection.bulkTransfer(mReadEndpoint, mReadBuffer, readAmt,
-                        timeoutMillis);
+                // some devices always return mReadBuffer.length for bulkTransfer
+                numBytesRead = Math.min(readAmt, mConnection.bulkTransfer(
+                        mReadEndpoint, mReadBuffer, readAmt, timeoutMillis));
                 if (numBytesRead < 0) {
                     // This sucks: we get -1 on timeout, not 0 as preferred.
                     // We *should* use UsbRequest, except it has a bug/api oversight
@@ -191,6 +192,7 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
                     // in response :\ -- http://b.android.com/28023
                     return 0;
                 }
+
                 System.arraycopy(mReadBuffer, 0, dest, 0, numBytesRead);
             }
             return numBytesRead;
