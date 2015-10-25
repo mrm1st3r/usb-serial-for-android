@@ -76,6 +76,7 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
         private static final int SILABSER_SET_MHS_REQUEST_CODE = 0x07;
         private static final int SILABSER_SET_BAUDRATE = 0x1E;
         private static final int SILABSER_FLUSH_REQUEST_CODE = 0x12;
+        private static final int SILABSER_VENDOR_SPECIFIC_REQUEST_CODE = 0xFF;
 
        private static final int FLUSH_READ_CODE = 0x0a;
        private static final int FLUSH_WRITE_CODE = 0x05;
@@ -100,6 +101,13 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
 
         private static final int CONTROL_WRITE_DTR = 0x0100;
         private static final int CONTROL_WRITE_RTS = 0x0200;
+
+        /*
+         * SILABSER_VENDOR_SPECIFIC_REQUEST_CODE
+         */
+        private static final int WRITE_LATCH = 0x37E1;
+        private static final int READ_LATCH = 0x00C2;
+        private static final int GET_PARTNUM = 0x370B;
 
         private UsbEndpoint mReadEndpoint;
         private UsbEndpoint mWriteEndpoint;
@@ -269,7 +277,7 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
                     configDataBits |= 0x0800;
                     break;
             }
-            
+
             switch (parity) {
                 case PARITY_ODD:
                     configDataBits |= 0x0010;
@@ -278,7 +286,7 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
                     configDataBits |= 0x0020;
                     break;
             }
-            
+
             switch (stopBits) {
                 case STOPBITS_1:
                     configDataBits |= 0;
@@ -339,6 +347,15 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
             }
 
             return true;
+        }
+
+        public int writeGpio(final int ports, final int values) {
+            int data = ports;
+            data |= values << 8;
+
+            return mConnection.controlTransfer(REQTYPE_HOST_TO_DEVICE,
+                    SILABSER_VENDOR_SPECIFIC_REQUEST_CODE, WRITE_LATCH,
+                    data, null, 0, USB_WRITE_TIMEOUT_MILLIS);
         }
 
     }
